@@ -1,79 +1,49 @@
-//const Insta = require('@androz2091/insta.js');
 const Insta = require('./insta.js');
-const axios = require('axios')
-const pack = require('packagescrapers')
-const { performance } = require('perf_hooks')
+const axios = require('axios');
+const { performance } = require('perf_hooks');
 const client = new Insta.Client();
 
 client.on('connected', () => {
-    console.log(`Login Sebagai ${client.user.username} Followes ${client.user.followerCount}`);
-});                                            
- 
+    console.log(`Logged in as ${client.user.username}, Followers: ${client.user.followerCount}`);
+});
+
 client.on('pendingRequest', ctx => {
-        ctx.approve();
+    ctx.approve();
 });
 
 client.on('messageDelete', ctx => {
-        //ctx.reply(`${client.user.username} Telah menghapus pesannya Pesan: ${ctx.content}`)
-        console.log(`${client.user.username} Telah menghapus pesannya Pesan: ${ctx.content}`)
-});
-        
-client.on('newFollower', ctx => {
-        console.log(`Seseorang Baru saja mengikutimu`)
+    console.log(`${client.user.username} deleted a message: ${ctx.content}`);
 });
 
-client.on('messageCreate', async function(ctx) {
-           var text = ctx.content;
-           let ve = text.split(" ");
-           ve.shift();
-           pow = ve.join(" ");
-       if (RegExp(".ping", "i").exec(text)) {
-           let t0 = performance.now();
-           let t1 = performance.now();
-           let diff = ((t1 - t0) / 1000).toLocaleString('id-ID', { maximumFractionDigits: 3 });
-           let message = `Pong!\nIn ${diff} seconds.`
-           return ctx.reply(message)
-       }
-       if (RegExp('.help',"i").exec(text)){
-           return ctx.reply('Available Command\n .ping .help .google .lirik .p .npm .ssweb')
-       }                                                                                                 
-       if (RegExp(".lirik", 'i').exec(text)) {                                                                               
-           var reqy = await axios.get(`https://lyrics-api.xlaaf.repl.co/search?q=${pow}`)
-           var message = 'Ditemukan: '+reqy.data.data
-           return ctx.reply(message)
-       }
-       if (RegExp(".google ", "i").exec(text)) {
-           var data = await axios.get(`https://google-api.xlaaf.repl.co/search?q=${pow}`)
-           var ok = data.data.data
-           var hai = ok[Math.floor(Math.random() * (ok.length))] 
-           var judul = hai.title
-           var link = hai.link
-           var desk = hai.desk
-           var pesan = 'Ditemukan : '+text+'\n'+judul+'\nUrl: '+link+'\nDeskripsi: '+desk
-            return ctx.reply(pesan);
-       }
-       if (new RegExp(".kbbi", "i").exec(text)) {
-           const kb = await axios.get(`https://kbbi-api.xlaaf.repl.co/search?kata=${pow}`)
-           const bi = kb.data.data.arti
-           return await ctx.reply('Kata: '+text+'\nArti: '+bi)
-       } 
-       if (new RegExp(".p", "i").exec(text)) {
-           var pe = await axios.get(`https://pixabay.com/api/?key=${process.env.pixkey}&q=${pow}`)
-           var ok = pe.data.hits
-           var hai = ok[Math.floor(Math.random() * (ok.length))]                                                                                                                                                                                                        
-           return await ctx.chat.sendPhoto(hai.previewURL)
-       }
-       if (new RegExp(".npm", "i").exec(text)) {
-           var txt = text
-           let inputArray = input.split(" ");
-               inputArray.shift();
-              pesan = inputArray.join(" "); 
-           var ok = pack.npm(pesan)
-           var hai = ok[Math.floor(Math.random() * (ok.length))] 
-           var wk = hai.title
-           var link = hai.link
-           return await ctx.reply(`Package Name: ${wk}\nLink Package: ${link}`)
-       }
+client.on('newFollower', ctx => {
+    console.log(`You have a new follower`);
+});
+
+client.on('messageCreate', async ctx => {
+    let text = ctx.content;
+    let command = text.split(" ")[0];
+
+    switch (command.toLowerCase()) {
+        case '.ping':
+            let t0 = performance.now();
+            let t1 = performance.now();
+            let diff = ((t1 - t0) / 1000).toLocaleString('id-ID', { maximumFractionDigits: 3 });
+            ctx.reply(`Pong!\nIn ${diff} seconds.`);
+            break;
+        case '.help':
+            ctx.reply('Available Commands:\n .ping .help .google .lirik .p .npm .ssweb');
+            break;
+        case '.lirik':
+            let lyricsResponse = await axios.get(`https://lyrics-api.xlaaf.repl.co/search?q=${text.substring(7)}`);
+            ctx.reply(`Found: ${lyricsResponse.data.data}`);
+            break;
+        case '.google':
+            let googleResponse = await axios.get(`https://google-api.xlaaf.repl.co/search?q=${text.substring(8)}`);
+            let randomResult = googleResponse.data.data[Math.floor(Math.random() * googleResponse.data.data.length)];
+            ctx.reply(`Found: ${text}\n${randomResult.title}\nUrl: ${randomResult.link}\nDescription: ${randomResult.desk}`);
+            break;
+        // Add more cases for other commands
+    }
 });
 
 client.login(process.env.username, process.env.password);
